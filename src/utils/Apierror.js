@@ -6,6 +6,7 @@ class Apierror extends Error{
         errors=[],
         stack=""
     ){
+        //overriding
         super(message)
         this.statusCode= statusCode
         this.data= null
