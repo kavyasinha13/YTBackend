@@ -24,4 +24,4 @@ import fs from "fs";
         }
     }
 
-    export {upload}
+    export {uploadOnCloudinary}
