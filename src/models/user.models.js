@@ -50,7 +50,7 @@ const userSchema = new mongoose.Schema({
  }
 )
 
-//if you want to do something before a particular thing like just before saving you want to encrypt password
+//if you want to do something before a particular thing like just before saving, you want to encrypt password
 
  userSchema.pre("save", async function(next){
     if(!this.isModified("password")) return next();
@@ -74,7 +74,7 @@ const userSchema = new mongoose.Schema({
         },
         process.env.ACCESS_TOKEN_SECRET,
         {
-            ACCESS_TOKEN_EXPIRY
+           expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "1d",
         }
     )
  }
@@ -86,7 +86,7 @@ userSchema.methods.generateRefreshToken= function(){
         },
         process.env.REFRESH_TOKEN_SECRET,
         {
-            REFRESH_TOKEN_EXPIRY
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY || "7d",
         }
     )
 }
