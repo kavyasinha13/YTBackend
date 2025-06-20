@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
         unique:true,
         lowercase: true,
         trim:true,
-        index:true,
+        index:true, //for searching
     },
     email:{
         type:String,
@@ -55,7 +55,7 @@ const userSchema = new mongoose.Schema({
  userSchema.pre("save", async function(next){
     if(!this.isModified("password")) return next();
 
-    this.password = await bcrypt.hash(this.password, 10)
+    this.password = await bcrypt.hash(this.password, 10) //encrypted password
     next()
  })
 
@@ -71,7 +71,7 @@ const userSchema = new mongoose.Schema({
             email:this.email,
             username:this.username,
             fullName:this.fullName
-        },
+        }, //payload 
         process.env.ACCESS_TOKEN_SECRET,
         {
            expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "1d",
