@@ -41,8 +41,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
     }); //fetch videos that belong to the user or channel owner
    }*/
 
-   pipeline.push({
-    $match:{isPublished: true}});
 
     if(sortBy && sortType){
         pipeline.push({
