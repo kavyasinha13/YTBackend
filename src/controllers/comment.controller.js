@@ -101,7 +101,7 @@ const addComment = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Content is required");
     }
 
-    const video = await Comment.findById(videoId);
+    const video = await Video.findById(videoId);
     
     if(!video){
         throw new ApiError(404, "Video not found");
