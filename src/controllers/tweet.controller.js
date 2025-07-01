@@ -90,10 +90,10 @@ const deleteTweet = asyncHandler(async (req, res) => {
         throw new ApiError(400,"only owner can delete tweets")
     }
 
-    await Tweet.findByIdAndUpdate(tweetId)
+    await Tweet.findByIdAndDelete(tweetId)
 
     return res
-    .statu(200)
+    .status(200)
     .json(new ApiResponse(200, {tweetId}, "tweet deleted successfully"))
 })
 
@@ -109,14 +109,14 @@ const getUserTweets = asyncHandler(async (req, res) => {
     const tweets = await Tweet.aggregate([
         {
             $match:{
-                onwer:new mongoose.Types.ObjectId(userId),
+                owner:new mongoose.Types.ObjectId(userId),
             }
         },
         {
             $lookup:{
                 from:"users",
                 localField:"owner",
-                foreignField:"._id",
+                foreignField:"_id",
                 as:"ownerDetails",
                 pipeline:[
                     {
@@ -149,15 +149,11 @@ const getUserTweets = asyncHandler(async (req, res) => {
                     $size:"$likeDetails",
                 },
                 ownerDetails:{
-                    $first:$ownerDetails
+                    $first:"$ownerDetails"
                 },
-                isLiked:{
-                    $cond:{
-                        if:{ $in:[req.user?._id, $likeDetails.likedBy]},
-                        then:true,
-                        else:false
-                    }
-                }
+                isLiked: {
+          $in: [req.user?._id, { $map: { input: "$likeDetails", as: "like", in: "$$like.likedBy" } }],
+        },
             },
         },
         {
@@ -177,7 +173,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
     ]);
 
     return res
-    .statu(200)
+    .status(200)
     .json(new ApiResponse(200, tweets, "tweets fetched successfully"))
 
     
