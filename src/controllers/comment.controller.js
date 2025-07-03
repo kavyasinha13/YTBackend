@@ -18,6 +18,8 @@ const getVideoComments = asyncHandler(async (req, res) => {
     throw new ApiError(404,"Video not found")
    }
 
+   const userId = new mongoose.Types.ObjectId(req.user._id);
+
   const commentAggregate = Comment.aggregate([
     {
         $match:{
@@ -50,7 +52,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
             },
             isLiked:{
                 $cond:{
-                    if:{ $in : [req.user?.indexOf, "$likes.likedBy"]},
+                    if:{ $in : [userId, "$likes.likedBy"]},
                     then: true,
                     else:false,
                 }//check if the user has liked the comment
@@ -112,6 +114,7 @@ const addComment = asyncHandler(async (req, res) => {
         video: videoId,
         owner:req.user?._id
     });
+    
 
     if(!comment){
         throw new ApiError(500, "Failed to add comment please try again")
