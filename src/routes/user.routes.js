@@ -16,6 +16,7 @@ import {
 
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { getChannelVideos } from "../controllers/dashboard.controller.js";
 
 const router = Router();
 
@@ -50,6 +51,7 @@ router
   .patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage);
 
 router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
+router.route("/allVideos/:username").get(verifyJWT, getChannelVideos);
 router.route("/history/:videoId").post(verifyJWT, addToWatchHistory);
 router.route("/history").get(verifyJWT, getWatchHistory);
 
