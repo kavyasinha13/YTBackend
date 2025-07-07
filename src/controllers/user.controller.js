@@ -473,6 +473,38 @@ const getWatchHistory = asyncHandler(async (req,res) =>{
 
 })
 
+const addToWatchHistory = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    return res.status(400).json({
+      success: false,
+      message: "Video ID is required",
+    });
+  }
+
+  const user = await User.findById(userId);
+
+  // Only push if video is not already in history
+  if (!user.watchHistory.includes(videoId)) {
+    user.watchHistory.push(videoId);
+
+    // Optional: You can limit history to latest 50 items
+    if (user.watchHistory.length > 50) {
+      user.watchHistory.shift(); // remove the oldest
+    }
+
+    await user.save();
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Watch history updated",
+  });
+});
+
+
 export {
     registerUser,
     loginUser,
@@ -485,4 +517,5 @@ export {
     updateUserCoverImage,
     getUserChannelProfile,
     getWatchHistory,
+    addToWatchHistory 
 }
