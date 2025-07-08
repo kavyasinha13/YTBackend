@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { Video } from "../models/video.models.js";
 import { Subscription } from "../models/subscription.models.js";
+import { User } from "../models/user.models.js";
 import { Like } from "../models/like.models.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -8,7 +9,15 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 // Get the channel stats like total video views, total subscribers, total videos, total likes etc.
 const getChannelStats = asyncHandler(async (req, res) => {
-  const userId = req.user?._id;
+  const { username } = req.params;
+
+  const user = await User.findOne({ username });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const userId = user._id;
 
   const totalSubscribers = await Subscription.aggregate([
     {
@@ -81,7 +90,15 @@ const getChannelStats = asyncHandler(async (req, res) => {
 
 // Get all the videos uploaded by the channel
 const getChannelVideos = asyncHandler(async (req, res) => {
-  const userId = req.user?._id;
+  const { username } = req.params;
+
+  const user = await User.findOne({ username });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const userId = user._id;
 
   const videos = await Video.aggregate([
     {
