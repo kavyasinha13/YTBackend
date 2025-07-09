@@ -313,25 +313,21 @@ const updateVideo = asyncHandler(async (req, res) => {
     updateData.description = description.trim();
   }
 
-  const thumbnailLocalPath = req.file?.path;
+  if (req.file?.path) {
+    const thumbnail = await uploadOnCloudinary(req.file.path);
+    if (!thumbnail) {
+      throw new ApiError(400, "thumbnail upload failed");
+    }
 
-  if (!thumbnailLocalPath) {
-    throw new ApiError(400, "thumbnail is required");
-  }
+    // Delete old thumbnail
+    if (video.thumbnail?.public_id) {
+      await deleteOnCloudinary(video.thumbnail.public_id);
+    }
 
-  const thumbnail = await uploadOnCloudinary(thumbnailLocalPath);
-
-  if (!thumbnail) {
-    throw new ApiError(400, "thumbnail not found");
-  }
-
-  updateData.thumbnail = {
-    public_id: thumbnail.public_id,
-    url: thumbnail.url,
-  };
-
-  if (video.thumbnail?.public_id) {
-    await deleteOnCloudinary(video.thumbnail.public_id);
+    updateData.thumbnail = {
+      public_id: thumbnail.public_id,
+      url: thumbnail.url,
+    };
   }
 
   const updatedVideo = await Video.findByIdAndUpdate(
