@@ -94,7 +94,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
 //add a comment to a video
 const addComment = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  const { content } = req.body;
+  const { parentComment, content } = req.body;
 
   if (!content) {
     throw new ApiError(404, "Content is required");
@@ -110,6 +110,7 @@ const addComment = asyncHandler(async (req, res) => {
     content,
     video: videoId,
     owner: req.user?._id,
+    parentComment: parentComment || null,
   });
 
   if (!comment) {
