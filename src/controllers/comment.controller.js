@@ -236,6 +236,52 @@ const getTweetComments = asyncHandler(async (req, res) => {
     );
 });
 
+const addReplyToComment = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  const { content } = req.body;
+
+  if (!content) {
+    throw new ApiError(400, "Reply content is required");
+  }
+
+  const parent = await Comment.findById(commentId);
+  if (!parent) {
+    throw new ApiError(404, "Parent comment not found");
+  }
+
+  const reply = await Comment.create({
+    content,
+    owner: req.user._id,
+    video: parent.video || undefined,
+    tweet: parent.tweet || undefined,
+    parentComment: commentId,
+  });
+
+  const populatedReply = await Comment.findById(reply._id).populate(
+    "owner",
+    "username"
+  );
+
+  return res
+    .status(201)
+    .json(new ApiResponse(201, populatedReply, "Reply added successfully"));
+});
+
+const getRepliesToComment = asyncHandler(async (req, res) => {
+  const { commentId } = req.params;
+  const { page = 1, limit = 2 } = req.query;
+
+  const replies = await Comment.find({ parentComment: commentId })
+    .populate("owner", "username")
+    .sort({ createdAt: -1 }) // newest first
+    .skip((page - 1) * limit)
+    .limit(parseInt(limit));
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, replies, "Replies fetched successfully"));
+});
+
 export {
   getVideoComments,
   addComment,
@@ -243,4 +289,6 @@ export {
   deleteComment,
   addCommentToTweet,
   getTweetComments,
+  addReplyToComment,
+  getRepliesToComment,
 };

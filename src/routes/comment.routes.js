@@ -6,6 +6,8 @@ import {
   updateComment,
   addCommentToTweet,
   getTweetComments,
+  addReplyToComment,
+  getRepliesToComment,
 } from "../controllers/comment.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
@@ -17,5 +19,7 @@ router.route("/:videoId").get(getVideoComments).post(addComment);
 router.route("/c/:commentId").delete(deleteComment).patch(updateComment);
 router.route("/tweet/:tweetId").post(addCommentToTweet);
 router.route("/tweet/:tweetId").get(getTweetComments);
+router.post("/reply/:commentId", addReplyToComment);
+router.get("/replies/:commentId", getRepliesToComment);
 
 export default router;

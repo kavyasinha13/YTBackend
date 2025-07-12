@@ -196,4 +196,25 @@ const getAllTweets = async (req, res) => {
   }
 };
 
-export { createTweet, getUserTweets, updateTweet, deleteTweet, getAllTweets };
+const getTweetById = asyncHandler(async (req, res) => {
+  const { tweetId } = req.params;
+
+  const tweet = await Tweet.findById(tweetId).populate("owner", "username");
+
+  if (!tweet) {
+    throw new ApiError(404, "Tweet not found");
+  }
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, tweet, "Tweet fetched successfully"));
+});
+
+export {
+  createTweet,
+  getUserTweets,
+  updateTweet,
+  deleteTweet,
+  getAllTweets,
+  getTweetById,
+};
