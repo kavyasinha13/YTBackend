@@ -117,9 +117,11 @@ const addComment = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Failed to add comment please try again");
   }
 
+  const populatedComment = await comment.populate("owner", "username fullName");
+
   return res
     .status(201)
-    .json(new ApiResponse(201, comment, "comment added successfully"));
+    .json(new ApiResponse(201, populatedComment, "comment added successfully"));
 });
 
 // update a comment
