@@ -5,7 +5,7 @@ import { Video } from "../models/video.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt, { decode } from "jsonwebtoken";
-import mongoose from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
@@ -422,32 +422,39 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         localField: "watchHistory",
         foreignField: "_id",
         as: "watchHistory",
+      },
+    },
+    {
+      $unwind: "$watchHistory",
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "watchHistory.owner",
+        foreignField: "_id",
+        as: "watchHistory.owner",
         pipeline: [
           {
-            $lookup: {
-              from: "users",
-              localField: "owner",
-              foreignField: "_id",
-              as: "owner",
-              pipeline: [
-                {
-                  $project: {
-                    fullName: 1,
-                    username: 1,
-                    avatar: 1,
-                  },
-                },
-                {
-                  $addFields: {
-                    owner: {
-                      $first: "$owner",
-                    },
-                  },
-                },
-              ],
+            $project: {
+              fullName: 1,
+              username: 1,
+              avatar: 1,
             },
           },
         ],
+      },
+    },
+    {
+      $addFields: {
+        "watchHistory.owner": {
+          $first: "$watchHistory.owner",
+        },
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        watchHistory: { $push: "$watchHistory" },
       },
     },
   ]);
@@ -457,7 +464,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        user[0].watchHistory,
+        user[0]?.watchHistory || [],
         "Watch History fetched successfully"
       )
     );
@@ -513,6 +520,113 @@ const addToWatchHistory = asyncHandler(async (req, res) => {
     );
 });
 
+const addToWatchLater = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  const userId = req.user?._id;
+
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "invalid videoId");
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "user does not exist");
+  }
+
+  if (!user.watchLater.includes(videoId)) {
+    user.watchLater.push(videoId);
+    await user.save();
+  }
+
+  res
+    .status(200)
+    .json(new ApiResponse(200, user.watchLater, "video added to watch later"));
+});
+
+const removeFromWatchLater = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  const userId = req.user?._id;
+
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "invalid videoId");
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "user does not exist");
+  }
+
+  user.watchLater = user.watchLater.filter((id) => id.toString() !== videoId);
+  await user.save();
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, user.watchLater, "video removed from watch later")
+    );
+});
+
+const getWatchLater = asyncHandler(async (req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id),
+      },
+    },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchLater",
+        foreignField: "_id",
+        as: "watchLater",
+      },
+    },
+    {
+      $unwind: "$watchLater",
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "watchLater.owner",
+        foreignField: "_id",
+        as: "watchLater.owner",
+        pipeline: [
+          {
+            $project: {
+              fullName: 1,
+              username: 1,
+              avatar: 1,
+            },
+          },
+        ],
+      },
+    },
+    {
+      $addFields: {
+        "watchLater.owner": {
+          $first: "$watchLater.owner",
+        },
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        watchLater: { $push: "$watchLater" },
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user[0]?.watchLater || [],
+        "Watch Later fetched successfully"
+      )
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -526,4 +640,7 @@ export {
   getUserChannelProfile,
   getWatchHistory,
   addToWatchHistory,
+  addToWatchLater,
+  removeFromWatchLater,
+  getWatchLater,
 };

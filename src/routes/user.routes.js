@@ -12,6 +12,9 @@ import {
   getUserChannelProfile,
   getWatchHistory,
   addToWatchHistory,
+  addToWatchLater,
+  removeFromWatchLater,
+  getWatchLater,
 } from "../controllers/user.controller.js";
 
 import { upload } from "../middlewares/multer.middleware.js";
@@ -58,5 +61,8 @@ router.route("/allVideos/:username").get(verifyJWT, getChannelVideos);
 router.route("/stats/:username").get(verifyJWT, getChannelStats);
 router.route("/history/:videoId").post(verifyJWT, addToWatchHistory);
 router.route("/history").get(verifyJWT, getWatchHistory);
+router.route("/watchLater/:videoId").post(verifyJWT, addToWatchLater);
+router.route("/watchLater/:videoId").delete(verifyJWT, removeFromWatchLater);
+router.route("/watchLater").get(verifyJWT, getWatchLater);
 
 export default router;
