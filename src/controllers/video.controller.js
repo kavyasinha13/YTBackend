@@ -173,7 +173,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     throw new ApiError(400, "invalid userId");
   }
 
-  const video = Video.aggregate([
+  const video = await Video.aggregate([
     {
       $match: {
         _id: new mongoose.Types.ObjectId(videoId),
@@ -209,7 +209,7 @@ const getVideoById = asyncHandler(async (req, res) => {
               },
               isSubscribed: {
                 $cond: {
-                  if: { $in: [req.user?._id, " subscribers.subscriber"] },
+                  if: { $in: [req.user?._id, "$subscribers.subscriber"] },
                   then: true,
                   else: false,
                 },
@@ -239,7 +239,7 @@ const getVideoById = asyncHandler(async (req, res) => {
           $cond: {
             if: { $in: [req.user?._id, "$likes.likedBy"] },
             then: true,
-            else: true,
+            else: false,
           },
         },
       },
@@ -260,11 +260,11 @@ const getVideoById = asyncHandler(async (req, res) => {
     },
   ]);
 
-  if (!video) {
-    throw new ApiError(500, "failed to fetch video");
+  if (!video || video.length === 0) {
+    throw new ApiError(404, "Video not found");
   }
 
-  await Video.findByIdAndUpdate(req.user?._id, {
+  await Video.findByIdAndUpdate(videoId, {
     $inc: {
       views: 1,
     },

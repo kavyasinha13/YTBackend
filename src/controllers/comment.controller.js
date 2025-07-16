@@ -66,10 +66,12 @@ const getVideoComments = asyncHandler(async (req, res) => {
     },
     {
       $project: {
+        _id: 1,
         content: 1,
         createdAt: 1,
         likesCount: 1,
         owner: {
+          _id: 1,
           username: 1,
           fullName: 1,
           "avatar.url": 1,
@@ -151,7 +153,9 @@ const updateComment = asyncHandler(async (req, res) => {
       },
     },
     { new: true }
-  );
+  )
+    .populate("owner", "username fullName avatar.url")
+    .lean();
 
   if (!updatedComment) {
     throw new ApiError(500, " failed to edit comment , please try again");
@@ -166,14 +170,20 @@ const updateComment = asyncHandler(async (req, res) => {
 const deleteComment = asyncHandler(async (req, res) => {
   const { commentId } = req.params;
 
-  const comment = await Comment.findById(commentId);
+  const comment = await Comment.findById(commentId).populate("video");
 
   if (!comment) {
     throw new ApiError(404, "Comment not found");
   }
 
-  if (comment?.owner.toString() !== req.user?._id.toString()) {
-    throw new ApiError(400, "only comment owner can delete their comment");
+  if (
+    comment.owner.toString() !== req.user._id.toString() &&
+    comment.video.owner.toString() !== req.user._id.toString()
+  ) {
+    throw new ApiError(
+      403,
+      "Only the comment owner or video owner can delete this comment"
+    );
   }
 
   await Comment.findByIdAndDelete(commentId);
