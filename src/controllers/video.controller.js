@@ -11,46 +11,44 @@ import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary.js";
 //get all videos based on query, sort, pagination
 const getAllVideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-  //take values from response url
 
   const pipeline = [];
 
+  // Always start with $search if query is present
   if (query) {
-    //this takes the query for search given by the user
     pipeline.push({
-      //once you find videos whose title or description matches the query add them to pipeline array
       $search: {
-        $index: "search-videos", //name of index in mongodb atlas
+        index: "search-videos",
         text: {
-          query: query, //given by user to search
-          path: ["title", "description"], //search on these attributes
+          query,
+          path: ["title", "description"],
         },
       },
     });
-  }
-
-  /*if(userId){
-    if(!isValidObjectId(userId)){
-        throw new ApiError(400,"invalid userId")
-    }
-
-    pipeline.push({
-        $match:{
-            owner:new mongoose.Types.ObjectId(userId)
-        }
-    }); //fetch videos that belong to the user or channel owner
-   }*/
-
-  if (sortBy && sortType) {
-    pipeline.push({
-      $sort: {
-        [sortBy]: sortType === "asc" ? 1 : -1,
-      },
-    });
   } else {
-    pipeline.push({ $sort: { createdAt: -1 } });
+    pipeline.push({ $match: {} });
   }
 
+  // Optional user-specific filter (commented for now)
+  // if (userId) {
+  //   if (!isValidObjectId(userId)) {
+  //     throw new ApiError(400, "invalid userId");
+  //   }
+  //   pipeline.push({
+  //     $match: {
+  //       owner: new mongoose.Types.ObjectId(userId),
+  //     },
+  //   });
+  // }
+
+  // Sorting logic
+  pipeline.push({
+    $sort: {
+      [sortBy || "createdAt"]: sortType === "asc" ? 1 : -1,
+    },
+  });
+
+  // Add likes and user info
   pipeline.push(
     {
       $lookup: {
@@ -97,6 +95,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
     page: parseInt(page, 10),
     limit: parseInt(limit, 10),
   };
+
   const video = await Video.aggregatePaginate(videoAggregate, options);
 
   return res
